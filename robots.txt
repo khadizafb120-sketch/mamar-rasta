@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://khadizafb120-sketch.github.io/mamar-rasta/sitemap.xml
