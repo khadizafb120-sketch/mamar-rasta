@@ -1,0 +1,50 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.sabbircodex.mamarrasta'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.sabbircodex.mamarrasta"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("mamar-rasta.keystore")
+            storePassword "mamarrasta"
+            keyAlias "mamarrasta"
+            keyPassword "mamarrasta"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+        debug {
+            minifyEnabled false
+        }
+    }
+
+    androidResources {
+        noCompress 'glb', 'wasm', 'mp3', 'jpg', 'png', 'webmanifest'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.11.0'
+}

@@ -2,3 +2,8 @@ node_modules/
 dist/
 mamar-rasta-web-deploy.zip
 .DS_Store
+android-app/app/mamar-rasta.keystore
+android-app/app/src/main/assets/www/
+android-app/app/build/
+android-app/.gradle/
+MamarRasta3D-Offline.apk

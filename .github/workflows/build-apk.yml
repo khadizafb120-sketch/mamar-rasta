@@ -1,0 +1,84 @@
+name: Build Offline Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'android-app/**'
+      - '.github/workflows/build-apk.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install web dependencies & build offline bundle
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm exec vite build
+          rm -rf android-app/app/src/main/assets/www
+          mkdir -p android-app/app/src/main/assets/www
+          cp -r dist/. android-app/app/src/main/assets/www/
+          mkdir -p android-app/app/src/main/res/mipmap-xxxhdpi
+          mkdir -p android-app/app/src/main/res/mipmap-xxhdpi
+          mkdir -p android-app/app/src/main/res/mipmap-xhdpi
+          cp public/icons/icon-512.png android-app/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp public/icons/icon-192.png android-app/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          cp public/icons/icon-192.png android-app/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Generate release keystore & compile signed Offline APK
+        working-directory: android-app
+        run: |
+          keytool -genkeypair -v \
+            -keystore app/mamar-rasta.keystore \
+            -alias mamarrasta \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass mamarrasta -keypass mamarrasta \
+            -dname "CN=Sabbir Codex & Majid, OU=Sabbir Codex Dev Team, O=Mamar Rasta, L=Dhaka, C=BD"
+          gradle assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk ../MamarRasta3D-Offline.apk
+          ls -lh ../MamarRasta3D-Offline.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MamarRasta3D-Offline-APK
+          path: MamarRasta3D-Offline.apk
+
+      - name: Publish Permanent Downloadable Release APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete v1.0-offline --yes 2>/dev/null || true
+          git tag -f v1.0-offline
+          git push -f origin v1.0-offline
+          gh release create v1.0-offline MamarRasta3D-Offline.apk \
+            --title "মামার রাস্তা ৩ডি — Offline Android APK (v1.0)" \
+            --notes "১০০% অফলাইন অ্যান্ড্রয়েড APK! ইন্টারনেট ছাড়াই খেলুন — নির্মাতা: সাব্বির Codex ও মাজিদ (Sabbir Codex Development Team)।"
